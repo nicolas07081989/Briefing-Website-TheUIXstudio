@@ -98,7 +98,8 @@ if (!function_exists('tuixb_get_questions')) {
                     array('name' => 'conversion_necesita_form', 'label' => '¿Necesitan formulario?', 'type' => 'select', 'options' => array('Sí', 'No')),
                     array('name' => 'conversion_campos_form', 'label' => '¿Qué campos debe tener?', 'type' => 'textarea'),
                     array('name' => 'conversion_boton_flotante_whatsapp', 'label' => '¿Necesitan botón flotante de WhatsApp?', 'type' => 'select', 'options' => array('Sí', 'No')),
-                    array('name' => 'conversion_captar', 'label' => '¿Quieren captar leads, llamadas o reuniones?', 'type' => 'text'),
+                    array('name' => 'conversion_captar', 'label' => '¿Quieren captar leads, llamadas o reuniones?', 'type' => 'multiselect', 'options' => array('Leads', 'Llamadas', 'Reuniones', 'Ventas directas', 'WhatsApp')),
+                    array('name' => 'conversion_canales', 'label' => 'Canales de contacto que desean activar desde la web', 'type' => 'multiselect', 'options' => array('Formulario', 'WhatsApp', 'Llamada', 'Email', 'Agenda/Calendario', 'Chat en vivo')),
                 ),
             ),
             'seo' => array(
@@ -122,6 +123,15 @@ if (!function_exists('tuixb_get_questions')) {
                     array('name' => 'tec_analytics_pixel', 'label' => '¿Necesitan Analytics o Pixel?', 'type' => 'select', 'options' => array('Sí', 'No', 'No sé')),
                     array('name' => 'tec_crm_auto', 'label' => '¿Necesitan CRM, calendario o automatizaciones?', 'type' => 'textarea'),
                     array('name' => 'tec_info_extra', 'label' => '¿Hay algo técnico importante que debamos saber?', 'type' => 'textarea'),
+                ),
+            ),
+
+            'archivos' => array(
+                'title' => '10. Material de referencia y archivos',
+                'fields' => array(
+                    array('name' => 'archivos_referencia', 'label' => 'Sube archivos del proyecto (logos, fotos, PDFs, catálogos, manuales, etc.)', 'type' => 'file', 'multiple' => true),
+                    array('name' => 'archivos_notas', 'label' => 'Notas sobre los archivos subidos (qué contiene cada carpeta/archivo)', 'type' => 'textarea'),
+                    array('name' => 'archivos_prioridad', 'label' => '¿Qué archivos son críticos para iniciar?', 'type' => 'textarea'),
                 ),
             ),
             'plan30' => array(
@@ -171,6 +181,8 @@ if (!function_exists('tuixb_get_questions')) {
                     array('name' => 'p50_politicas', 'label' => '¿Qué políticas necesitan?', 'type' => 'textarea'),
                     array('name' => 'p50_tienda_exitosa', 'label' => '¿Qué sería para ustedes una tienda online exitosa?', 'type' => 'textarea'),
                     array('name' => 'p50_preocupacion', 'label' => '¿Qué les preocupa más del ecommerce?', 'type' => 'textarea'),
+                    array('name' => 'p50_funcionalidades', 'label' => 'Funcionalidades WooCommerce que desean incluir', 'type' => 'multiselect', 'options' => array('Wishlist', 'Comparador', 'Upsells/Cross-sells', 'Recuperación de carrito', 'Checkout rápido', 'Factura automática', 'Multi-moneda', 'Multi-idioma', 'Suscripciones', 'Bundles')),
+                    array('name' => 'p50_operativa', 'label' => 'Áreas operativas a resolver en ecommerce', 'type' => 'multiselect', 'options' => array('Inventario', 'Envíos', 'Devoluciones', 'Atención postventa', 'Promociones', 'Automatizaciones de email')),
                 ),
             ),
         );
@@ -305,6 +317,18 @@ if (!function_exists('tuixb_render_field')) {
                 echo '<option value="' . esc_attr($opt) . '">' . esc_html($opt) . '</option>';
             }
             echo '</select>';
+        } elseif ($type === 'multiselect') {
+            echo '<select id="' . esc_attr($id) . '" name="' . $name . '[]" multiple data-multiselect="1"' . $reqAttr . '>';
+            foreach ((array) $f['options'] as $opt) {
+                echo '<option value="' . esc_attr($opt) . '">' . esc_html($opt) . '</option>';
+            }
+            echo '</select>';
+            echo '<small class="tuixb-hint">Puedes seleccionar múltiples opciones (Ctrl/Cmd + click).</small>';
+        } elseif ($type === 'file') {
+            $multiple = !empty($f['multiple']) ? ' multiple' : '';
+            $nameAttr = !empty($f['multiple']) ? $name . '[]' : $name;
+            echo '<input id="' . esc_attr($id) . '" type="file" name="' . esc_attr($nameAttr) . '" accept=".pdf,.png,.jpg,.jpeg,.webp,.svg,.doc,.docx"' . $multiple . $reqAttr . ' />';
+            echo '<small class="tuixb-hint">Formatos permitidos: PDF, imágenes, DOC/DOCX.</small>';
         } else {
             echo '<input id="' . esc_attr($id) . '" type="' . esc_attr($type) . '" name="' . $name . '"' . $reqAttr . ' />';
         }
@@ -320,7 +344,7 @@ if (!function_exists('tuixb_shortcode')) {
         ob_start();
         ?>
         <div class="tuixb-wrap" data-tuixb="1" data-ajax="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" data-nonce="<?php echo esc_attr(wp_create_nonce('tuixb_nonce')); ?>">
-            <form class="tuixb-form" novalidate>
+            <form class="tuixb-form" novalidate enctype="multipart/form-data">
                 <div class="tuixb-header">
                     <div>
                         <h2>Briefing de Proyecto Web</h2>
@@ -395,9 +419,10 @@ if (!function_exists('tuixb_shortcode')) {
             .tuixb-field input,.tuixb-field textarea,.tuixb-field select{appearance:none;-webkit-appearance:none;width:100%;min-height:46px;border:1px solid #2a3624 !important;background:#090c09 !important;color:#fff !important;padding:12px !important;border-radius:10px !important;outline:0;box-shadow:none !important;font-size:.93rem;line-height:1.35}
             .tuixb-field input:focus,.tuixb-field textarea:focus,.tuixb-field select:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(164,253,14,.15)}
             .tuixb-field .tuixb-error{color:#ff6868;min-height:14px;font-size:.78rem}
+            .tuixb-field .tuixb-hint{color:#97a293;min-height:14px;font-size:.74rem}
             .tuixb-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
             .tuixb-btn{border:0;border-radius:10px;padding:12px 16px;font-weight:700;cursor:pointer}
-            .tuixb-btn-main{background:var(--brand);color:#0b1106}
+            .tuixb-btn-main{background:var(--brand);color:#0b1106;border:1px solid #b6ff44}
             .tuixb-btn-ghost{background:#1a2216;color:#eaf0e8;border:1px solid #2f3d2a}
             .tuixb-submit{display:none}
             .tuixb-summary{display:grid;gap:12px}
@@ -469,25 +494,34 @@ if (!function_exists('tuixb_shortcode')) {
                 const getFormData = () => {
                     const fd = new FormData(form);
                     const data = {};
-                    fd.forEach((v, k) => { data[k] = v; });
+                    fd.forEach((v, k) => {
+                        if (Object.prototype.hasOwnProperty.call(data, k)) {
+                            data[k] = Array.isArray(data[k]) ? data[k].concat(v) : [data[k], v];
+                        } else {
+                            data[k] = v;
+                        }
+                    });
                     return data;
                 };
+
+                const humanValue = (val) => Array.isArray(val) ? val.join(', ') : (val || '-');
 
                 const buildSummary = () => {
                     const data = getFormData();
                     const blocks = [
-                        ['Plan elegido', ['Plan seleccionado: $' + (data.plan || '30')]],
-                        ['Datos clave del negocio', ['Negocio: ' + (data.negocio_nombre_comercial || '-'), 'Contacto: ' + (data.contacto_nombre || '-'), 'Correo: ' + (data.contacto_email || '-'), 'WhatsApp: ' + (data.contacto_whatsapp || '-')]],
-                        ['Objetivo de la web', ['Objetivo principal: ' + (data.web_objetivo_principal || '-'), 'Acción esperada: ' + (data.web_accion_visitante || '-'), 'Conversión: ' + (data.web_conversion_exitosa || '-')]],
-                        ['Cliente ideal', ['Cliente ideal: ' + (data.cliente_ideal_quien || '-'), 'Objeciones: ' + (data.cliente_objeciones || '-')]],
-                        ['Diseño y branding', ['Estilo: ' + (data.identidad_estilo || '-'), 'Sensación: ' + (data.identidad_sensacion || '-'), 'No desean: ' + (data.identidad_que_no_quieren || '-')]],
-                        ['Contenido disponible', ['Textos: ' + (data.contenido_textos || '-'), 'Fotos: ' + (data.contenido_fotos || '-'), 'Videos: ' + (data.contenido_videos || '-'), 'Falta crear: ' + (data.contenido_falta_crear || '-')]],
-                        ['Requerimientos técnicos', ['Idiomas: ' + (data.tec_idiomas || '-'), 'Integraciones: ' + (data.tec_integraciones || '-'), 'Automatizaciones: ' + (data.tec_crm_auto || '-')]],
+                        ['Plan elegido', ['Plan seleccionado: $' + humanValue(data.plan || '30')]],
+                        ['Datos clave del negocio', ['Negocio: ' + humanValue(data.negocio_nombre_comercial), 'Contacto: ' + humanValue(data.contacto_nombre), 'Correo: ' + humanValue(data.contacto_email), 'WhatsApp: ' + humanValue(data.contacto_whatsapp)]],
+                        ['Objetivo de la web', ['Objetivo principal: ' + humanValue(data.web_objetivo_principal), 'Acción esperada: ' + humanValue(data.web_accion_visitante), 'Conversión: ' + humanValue(data.web_conversion_exitosa)]],
+                        ['Cliente ideal', ['Cliente ideal: ' + humanValue(data.cliente_ideal_quien), 'Objeciones: ' + humanValue(data.cliente_objeciones)]],
+                        ['Diseño y branding', ['Estilo: ' + humanValue(data.identidad_estilo), 'Sensación: ' + humanValue(data.identidad_sensacion), 'No desean: ' + humanValue(data.identidad_que_no_quieren)]],
+                        ['Contenido disponible', ['Textos: ' + humanValue(data.contenido_textos), 'Fotos: ' + humanValue(data.contenido_fotos), 'Videos: ' + humanValue(data.contenido_videos), 'Falta crear: ' + humanValue(data.contenido_falta_crear)]],
+                        ['Requerimientos técnicos', ['Idiomas: ' + humanValue(data.tec_idiomas), 'Integraciones: ' + humanValue(data.tec_integraciones), 'Automatizaciones: ' + humanValue(data.tec_crm_auto)]],
+                        ['Archivos y referencias', ['Notas: ' + humanValue(data.archivos_notas), 'Prioridad: ' + humanValue(data.archivos_prioridad)]],
                     ];
                     if(data.plan === '30'){
                         blocks.push(['Requerimientos del Plan $30', ['Tipo de web: ' + (data.p30_tipo_web || '-'), 'Servicios a destacar: ' + (data.p30_servicios_destacar || '-'), 'Secciones clave: ' + (data.p30_secciones_imprescindibles || '-')]]);
                     } else {
-                        blocks.push(['Requerimientos del Plan $50', ['Qué venden: ' + (data.p50_que_vender || '-'), 'Cantidad de productos: ' + (data.p50_cantidad_productos || '-'), 'Pagos: ' + (data.p50_metodos_pago || '-'), 'Envíos: ' + (data.p50_envios || '-')]]);
+                        blocks.push(['Requerimientos del Plan $50', ['Qué venden: ' + humanValue(data.p50_que_vender), 'Cantidad de productos: ' + humanValue(data.p50_cantidad_productos), 'Pagos: ' + humanValue(data.p50_metodos_pago), 'Envíos: ' + humanValue(data.p50_envios), 'Funcionalidades WooCommerce: ' + humanValue(data.p50_funcionalidades), 'Operativa ecommerce: ' + humanValue(data.p50_operativa)]]);
                     }
                     summaryBox.innerHTML = blocks.map(([t, items]) => `<article class="tuixb-summary-card"><h4>${t}</h4><ul>${items.map((i) => `<li>${(i || '-').replace(/</g, '&lt;')}</li>`).join('')}</ul></article>`).join('');
                 };
@@ -656,6 +690,45 @@ if (!function_exists('tuixb_pdf_from_data')) {
     }
 }
 
+
+if (!function_exists('tuixb_collect_uploaded_files')) {
+    function tuixb_collect_uploaded_files($targetDir) {
+        $saved = array();
+        if (empty($_FILES['archivos_referencia'])) {
+            return $saved;
+        }
+
+        $allowed = array('pdf','png','jpg','jpeg','webp','svg','doc','docx');
+        $f = $_FILES['archivos_referencia'];
+        $names = isset($f['name']) ? (array) $f['name'] : array();
+        $tmpNames = isset($f['tmp_name']) ? (array) $f['tmp_name'] : array();
+        $errors = isset($f['error']) ? (array) $f['error'] : array();
+
+        foreach ($names as $i => $name) {
+            if (empty($name) || !isset($tmpNames[$i]) || !isset($errors[$i])) {
+                continue;
+            }
+            if ((int) $errors[$i] !== UPLOAD_ERR_OK || !is_uploaded_file($tmpNames[$i])) {
+                continue;
+            }
+            $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+            if (!in_array($ext, $allowed, true)) {
+                continue;
+            }
+            $safeName = wp_unique_filename($targetDir, sanitize_file_name($name));
+            $dest = trailingslashit($targetDir) . $safeName;
+            if (move_uploaded_file($tmpNames[$i], $dest)) {
+                $saved[] = $dest;
+            }
+            if (count($saved) >= 15) {
+                break;
+            }
+        }
+
+        return $saved;
+    }
+}
+
 if (!function_exists('tuixb_send_briefing')) {
     function tuixb_send_briefing() {
         if (!isset($_POST['security']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_POST['security'])), 'tuixb_nonce')) {
@@ -681,6 +754,7 @@ if (!function_exists('tuixb_send_briefing')) {
         $safeBiz = sanitize_title($data['negocio_nombre_comercial']);
         $filename = 'briefing-' . $safeBiz . '-' . gmdate('Ymd-His') . '.pdf';
         $path = $dir . $filename;
+        $attachments = tuixb_collect_uploaded_files($dir);
 
         $pdf = tuixb_pdf_from_data($data);
         $written = file_put_contents($path, $pdf);
@@ -697,19 +771,26 @@ if (!function_exists('tuixb_send_briefing')) {
         $body .= "WhatsApp: " . $data['contacto_whatsapp'] . "\n";
         $body .= "Objetivo principal: " . $data['web_objetivo_principal'] . "\n\n";
         $body .= "Documento adjunto: " . $filename . "\n";
+        if (!empty($attachments)) {
+            $body .= "Archivos cliente adjuntos: " . count($attachments) . "\n";
+        }
 
         $headers = array(
             'Content-Type: text/plain; charset=UTF-8',
             'Reply-To: ' . $data['contacto_nombre'] . ' <' . $data['contacto_email'] . '>'
         );
-        $sent = wp_mail('info@theuixstudio.com', $subject, $body, $headers, array($path));
+        $mailAttachments = array_merge(array($path), $attachments);
+        $sent = wp_mail('info@theuixstudio.com', $subject, $body, $headers, $mailAttachments);
 
         if (!$sent) {
             @unlink($path);
+            foreach ($attachments as $attachment) { @unlink($attachment); }
             wp_send_json_error(array('message' => 'No se pudo enviar el correo.'));
         }
 
-        wp_send_json_success(array('message' => 'Briefing enviado con éxito. Tu información fue recibida correctamente.'));
+        @unlink($path);
+        foreach ($attachments as $attachment) { @unlink($attachment); }
+        wp_send_json_success(array('message' => 'Briefing enviado con éxito. Tu información y archivos fueron recibidos correctamente.'));
     }
 
     add_action('wp_ajax_tuixb_submit_briefing', 'tuixb_send_briefing');
